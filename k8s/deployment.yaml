@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-envios
+  labels:
+    app: ms-envios
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-envios
+  template:
+    metadata:
+      labels:
+        app: ms-envios
+    spec:
+      containers:
+        - name: ms-envios
+          image: ms-envios:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+              value: "file:/config/"
+            - name: COURIER_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ms-envios-secret
+                  key: api-token
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: ms-envios-config
